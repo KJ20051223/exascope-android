@@ -1,0 +1,58 @@
+name: Publish signed APK
+
+on:
+  workflow_run:
+    workflows: [Android build]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-v1.0.0
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - name: Verify signed release files
+        working-directory: release-assets/v1.0.0
+        env:
+          EXPECTED_SHA256: ce0128616dddd9fcd326df9b37a94647b4d263597d44d121879e4325de95b449
+        run: |
+          sha256sum --check SHA256SUMS.txt
+          actual=$(sha256sum ExaScope-v1.0.0.apk | cut -d ' ' -f 1)
+          test "$actual" = "$EXPECTED_SHA256"
+      - name: Upload and publish v1.0.0
+        working-directory: release-assets/v1.0.0
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          if draft=$(gh release view v1.0.0 --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$draft" = "false" ]; then
+              echo 'v1.0.0 is already published; leaving it unchanged.'
+              exit 0
+            fi
+          else
+            gh release create v1.0.0 --draft --target "$RELEASE_COMMIT" \
+              --title 'ExaScope v1.0.0 · 自定义范围的 Exa 搜索' --notes-file RELEASE-NOTES.md
+          fi
+          gh release upload v1.0.0 ExaScope-v1.0.0.apk SHA256SUMS.txt --clobber
+          gh release edit v1.0.0 --draft=false --latest

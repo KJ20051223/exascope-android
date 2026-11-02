@@ -69,7 +69,9 @@ jobs:
           disable-animations: true
           script: |
             bash ./gradlew connectedDebugAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true --no-daemon
-            adb pull /sdcard/Android/data/io.github.exascope/files/screenshots app-screenshots
+            mkdir -p app-screenshots
+            adb exec-out run-as io.github.exascope cat files/screenshots/search.png > app-screenshots/search.png
+            adb exec-out run-as io.github.exascope cat files/screenshots/settings.png > app-screenshots/settings.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -77,4 +79,3 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app-screenshots/
-

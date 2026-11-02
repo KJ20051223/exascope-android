@@ -66,7 +66,7 @@ public class DeviceSmokeTest {
     }
     private void saveScreenshot(String name) throws Exception {
         Bitmap bitmap=getInstrumentation().getUiAutomation().takeScreenshot();assertNotNull(bitmap);
-        File folder=new File(getInstrumentation().getTargetContext().getExternalFilesDir(null),"screenshots");
+        File folder=new File(getInstrumentation().getTargetContext().getFilesDir(),"screenshots");
         if(!folder.exists())assertTrue(folder.mkdirs());
         try(FileOutputStream output=new FileOutputStream(new File(folder,name))){assertTrue(bitmap.compress(Bitmap.CompressFormat.PNG,100,output));}
         bitmap.recycle();
