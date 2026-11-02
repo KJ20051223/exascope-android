@@ -1,0 +1,45 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'io.github.exascope'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'io.github.exascope'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    signingConfigs {
+        release {
+            if (System.getenv('EXASCOPE_KEYSTORE')) {
+                storeFile file(System.getenv('EXASCOPE_KEYSTORE'))
+                storePassword System.getenv('EXASCOPE_STORE_PASSWORD')
+                keyAlias System.getenv('EXASCOPE_KEY_ALIAS') ?: 'exascope'
+                keyPassword System.getenv('EXASCOPE_KEY_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (System.getenv('EXASCOPE_KEYSTORE')) signingConfig signingConfigs.release
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    testOptions { unitTests.returnDefaultValues = false }
+    lint { abortOnError true; checkReleaseBuilds true }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20250517'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
+}
